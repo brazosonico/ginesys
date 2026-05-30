@@ -1,26 +1,16 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
 function App() {
-
-  const [mensaje, setMensaje] = useState("");
-
-  useEffect(() => {
-
-    axios.get("http://127.0.0.1:8000/api/mensaje")
-      .then(response => {
-        setMensaje(response.data.mensaje);
-      })
-      .catch(error => {
-        console.log(error);
-      });
-
-  }, []);
-
   return (
-    <div>
-      <h1>{mensaje}</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/registro" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

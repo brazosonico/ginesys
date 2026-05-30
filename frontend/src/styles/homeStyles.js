@@ -591,6 +591,19 @@ loginTopLeft: {
 },
 
 backHomeButton: {
+  
+  backHomeButton: {
+  border: "1px solid #F2D4DF",
+  background: "linear-gradient(180deg, #ffffff 0%, #FBEAF0 100%)",
+  color: "#D4537E",
+  padding: "11px 20px",
+  borderRadius: 14,
+  cursor: "pointer",
+  fontWeight: 900,
+  fontSize: 14,
+  boxShadow: "0 8px 18px rgba(212,83,126,0.16)",
+},
+
   border: "1px solid #F2D4DF",
   background: "linear-gradient(135deg, #FFF8FA 0%, #FBEAF0 100%)",
   color: "#D4537E",
@@ -608,5 +621,55 @@ backHomeButton: {
 
 backHomeButtonHover: {
   transform: "translateY(-2px)",
+},
+
+ loginPage: {
+  minHeight: "100vh",
+  background: "radial-gradient(circle at top, #fff 0%, #FBEAF0 45%, #F7DDE8 100%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "40px 24px",
+},
+
+loginCard: {
+  width: "100%",
+  maxWidth: 1100,
+  background: "#ffffff",
+  border: "1px solid #F2D4DF",
+  borderRadius: 28,
+  overflow: "hidden",
+  boxShadow: `
+    0 30px 70px rgba(212,83,126,0.22),
+    0 12px 24px rgba(75,21,40,0.10),
+    inset 0 1px 0 rgba(255,255,255,0.9)
+  `,
+  transform: "perspective(1200px) rotateX(1deg)",
+},
+
+loginTop: {
+  height: 78,
+  padding: "0 38px",
+  borderBottom: "1px solid #F2D4DF",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  background: "linear-gradient(180deg, #ffffff 0%, #FFF8FA 100%)",
+  boxShadow: "0 8px 20px rgba(212,83,126,0.08)",
+},
+
+registerContainer: {
+  width: "100%",
+  maxWidth: "600px",
+  margin: "70px auto",
+  padding: "44px",
+  background: "#ffffff",
+  borderRadius: "28px",
+  border: "1px solid #F2D4DF",
+  boxShadow: `
+    0 28px 60px rgba(212,83,126,0.22),
+    0 10px 20px rgba(75,21,40,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.95)
+  `,
 },
 };
