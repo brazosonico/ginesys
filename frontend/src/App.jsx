@@ -1,26 +1,40 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import React from 'react';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+// Vistas de Autenticación
+import Home from "./pages/Home";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+
+// Vistas del Dashboard
+import DashboardLayout from './layouts/DashboardLayout';
+import PatientProfile from './pages/PatientProfile';
+
+// Asistente IA (chatbot flotante, visible en toda la app)
+import ChatbotWidget from './components/ChatbotWidget';
 
 function App() {
-
-  const [mensaje, setMensaje] = useState("");
-
-  useEffect(() => {
-
-    axios.get("http://127.0.0.1:8000/api/mensaje")
-      .then(response => {
-        setMensaje(response.data.mensaje);
-      })
-      .catch(error => {
-        console.log(error);
-      });
-
-  }, []);
-
   return (
-    <div>
-      <h1>{mensaje}</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Rutas públicas */}
+        <Route path="/" element={<Home />} />
+        <Route path="/registro" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+
+        {/* Ruta protegida del Dashboard (Envuelve el perfil en el layout) */}
+        <Route
+          path="/paciente"
+          element={
+            <DashboardLayout>
+              <PatientProfile />
+            </DashboardLayout>
+          }
+        />
+      </Routes>
+
+      <ChatbotWidget />
+    </BrowserRouter>
   );
 }
 
