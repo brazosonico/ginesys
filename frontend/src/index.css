@@ -1,111 +1,93 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
+* {
   margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+  padding: 0;
   box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+body {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color: #333333; /* Texto oscuro para que resalte en el fondo claro */
+  background-color: #f4f6f9;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+/* --- REGLAS RESPONSIVAS --- */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.sidebar-wrapper {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid #eaeaea;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.grid-2-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+/* --- COMPONENTES MÓVILES OCULTOS EN ESCRITORIO --- */
+.mobile-header { display: none; }
+.sidebar-overlay { display: none; }
+
+/* --- REGLAS MÁGICAS PARA CELULAR --- */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+  
+  /* 1. La nueva barra superior con el botón ☰ */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #fcfbf9;
+    border-bottom: 1px solid #eaeaea;
+    gap: 15px;
   }
-}
-p {
-  margin: 0;
-}
+  .mobile-header h2 { margin: 0; font-size: 18px; color: #333; }
+  .hamburger-btn {
+    background: none; border: none; font-size: 24px; cursor: pointer; color: #333; padding: 0;
+  }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+  /* 2. El fondo oscuro cuando el menú está abierto */
+  .sidebar-overlay {
+    display: block; position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.5); z-index: 998;
+  }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  /* 3. El menú flotante oculto a la izquierda */
+  .sidebar-wrapper {
+    position: fixed; top: 0; left: -300px; /* Escondido fuera de la pantalla */
+    width: 260px; height: 100vh; z-index: 999;
+    transition: left 0.3s ease-in-out; /* Animación suave */
+  }
+  
+  /* Clase que React agregará para mostrar el menú */
+  .sidebar-wrapper.open {
+    left: 0; 
+  }
+
+  .main-content {
+    padding: 15px;
+    overflow-y: auto;
+  }
+  .grid-2-col {
+    grid-template-columns: 1fr;
+  }
 }
