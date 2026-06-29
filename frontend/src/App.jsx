@@ -10,6 +10,9 @@ import Login from "./pages/Login";
 import DashboardLayout from './layouts/DashboardLayout';
 import PatientProfile from './pages/PatientProfile';
 
+// Asistente IA (chatbot flotante, visible en toda la app)
+import ChatbotWidget from './components/ChatbotWidget';
+
 function App() {
   return (
     <BrowserRouter>
@@ -20,15 +23,17 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Ruta protegida del Dashboard (Envuelve el perfil en el layout) */}
-        <Route 
-          path="/paciente" 
+        <Route
+          path="/paciente"
           element={
             <DashboardLayout>
               <PatientProfile />
             </DashboardLayout>
-          } 
+          }
         />
       </Routes>
+
+      <ChatbotWidget />
     </BrowserRouter>
   );
 }
