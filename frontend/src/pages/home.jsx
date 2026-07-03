@@ -22,6 +22,9 @@ import AgendarCita from "./AgendarCita";
  * ─────────────────────────────────────────────────────────────
  */
 
+// URL base de tu API. Ajusta si usas otro puerto/dominio o un .env (VITE_API_URL).
+const API_URL = import.meta.env?.VITE_API_URL || "http://localhost:8000/api";
+
 // Estilos locales para las piezas nuevas (usuario, avatar, dropdown).
 // Si prefieres centralizarlos en homeStyles.js, muévelos ahí tal cual.
 const userStyles = {
@@ -118,6 +121,19 @@ const userStyles = {
     borderBottom: "1px solid #f0f0f0",
     marginBottom: "6px",
   },
+  skeletonCard: {
+    background: "#f5f5f5",
+    borderRadius: "12px",
+    height: "120px",
+    animation: "pulse 1.5s infinite ease-in-out",
+  },
+  emptyText: {
+    color: "#888",
+    fontSize: "14px",
+    gridColumn: "1 / -1",
+    textAlign: "center",
+    padding: "20px 0",
+  },
 };
 
 // Textos personalizados según el rol del usuario
@@ -128,7 +144,7 @@ const CONTENIDO_POR_ROL = {
     ctaPrincipalHref: "/agendar-cita",
     ctaSecundario: "Ver mis citas",
     ctaSecundarioHref: "/mis-citas",
-  }, 
+  },
   doctor: {
     saludoExtra: "Esto es lo que tienes agendado hoy.",
     ctaPrincipal: "Ver mi agenda",
@@ -151,6 +167,15 @@ function Home() {
   const [user, setUser] = useState(null);
   const [rol, setRol] = useState(null);
   const dropdownRef = useRef(null);
+
+  // ── Datos dinámicos (antes hardcodeados) ─────────────────────
+  const [especialidades, setEspecialidades] = useState([]);
+  const [equipo, setEquipo] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [cargandoEspecialidades, setCargandoEspecialidades] = useState(true);
+  const [cargandoEquipo, setCargandoEquipo] = useState(true);
+  const [errorEspecialidades, setErrorEspecialidades] = useState(false);
+  const [errorEquipo, setErrorEquipo] = useState(false);
 
   // Cargar usuario logueado desde localStorage (claves reales de Login.jsx)
   useEffect(() => {
@@ -176,6 +201,89 @@ function Home() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Traer especialidades activas desde la tabla `especialidades`
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function cargarEspecialidades() {
+      setCargandoEspecialidades(true);
+      setErrorEspecialidades(false);
+      try {
+        const res = await fetch(`${API_URL}/especialidades`, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error("No se pudieron cargar las especialidades");
+        const data = await res.json();
+        // El backend devuelve { especialidades: [...] } y ya vienen
+        // filtradas por activo=true desde el controlador.
+        setEspecialidades(data.especialidades || []);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error(err);
+          setErrorEspecialidades(true);
+        }
+      } finally {
+        setCargandoEspecialidades(false);
+      }
+    }
+
+    cargarEspecialidades();
+    return () => controller.abort();
+  }, []);
+
+  // Traer equipo médico. Por ahora tu API solo expone /doctores
+  // (routes/api.php no tiene /enfermeras ni /asistentes todavía).
+  // Cuando agregues esos endpoints, vuelve a sumarlos aquí con Promise.all.
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function cargarEquipo() {
+      setCargandoEquipo(true);
+      setErrorEquipo(false);
+      try {
+        const res = await fetch(`${API_URL}/doctores`, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+
+        if (!res.ok) throw new Error("No se pudo cargar el equipo médico");
+
+        const data = await res.json();
+
+        // El backend devuelve { doctores: [...] } y cada doctor ya trae
+        // el nombre completo armado en el campo "nombre".
+        const normalizado = (data.doctores || []).map((d) => ({
+          id: `doc-${d.id_doctor}`,
+          nombre: `Dr(a). ${d.nombre}`,
+          rol: "Doctor(a)",
+        }));
+
+        setEquipo(normalizado);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error(err);
+          setErrorEquipo(true);
+        }
+      } finally {
+        setCargandoEquipo(false);
+      }
+    }
+
+    cargarEquipo();
+    return () => controller.abort();
+  }, []);
+
+  // Estadísticas de la sección "Nosotros". Si no tienes un endpoint
+  // dedicado (ej. /api/estadisticas), las derivamos de lo ya cargado.
+  useEffect(() => {
+    if (cargandoEspecialidades || cargandoEquipo) return;
+    setStats({
+      especialidades: especialidades.length,
+      equipo: equipo.length,
+    });
+  }, [cargandoEspecialidades, cargandoEquipo, especialidades, equipo]);
 
   const irLogin = () => {
     window.location.href = "/login";
@@ -383,25 +491,29 @@ function Home() {
           <h2 style={styles.sectionTitle}>Especialidades</h2>
 
           <div style={styles.specialtyGrid}>
-            <div style={styles.card}>
-              <h3 style={styles.cardTitle}>Ginecología</h3>
-              <p style={styles.cardText}>Revisiones de rutina, PAP, ciclo menstrual y métodos anticonceptivos.</p>
-            </div>
+            {cargandoEspecialidades &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} style={userStyles.skeletonCard} />
+              ))}
 
-            <div style={styles.card}>
-              <h3 style={styles.cardTitle}>Obstetricia</h3>
-              <p style={styles.cardText}>Control prenatal, embarazo, monitoreo fetal y atención postparto.</p>
-            </div>
+            {!cargandoEspecialidades && errorEspecialidades && (
+              <p style={userStyles.emptyText}>
+                No pudimos cargar las especialidades en este momento.
+              </p>
+            )}
 
-            <div style={styles.card}>
-              <h3 style={styles.cardTitle}>Mastología</h3>
-              <p style={styles.cardText}>Exploración mamaria, mastografías y detección temprana de cáncer.</p>
-            </div>
+            {!cargandoEspecialidades && !errorEspecialidades && especialidades.length === 0 && (
+              <p style={userStyles.emptyText}>Aún no hay especialidades registradas.</p>
+            )}
 
-            <div style={styles.card}>
-              <h3 style={styles.cardTitle}>Asistente IA</h3>
-              <p style={styles.cardText}>Resuelve dudas sobre tratamientos y citas en cualquier momento.</p>
-            </div>
+            {!cargandoEspecialidades &&
+              !errorEspecialidades &&
+              especialidades.map((esp) => (
+                <div key={esp.id_especialidad} style={styles.card}>
+                  <h3 style={styles.cardTitle}>{esp.nombre}</h3>
+                  <p style={styles.cardText}>{esp.descripcion}</p>
+                </div>
+              ))}
           </div>
         </div>
       </section>
@@ -452,9 +564,15 @@ function Home() {
             </div>
 
             <div style={styles.statsGrid}>
-              <div style={styles.statCard}><div style={styles.statValue}>3</div>Especialidades</div>
+              <div style={styles.statCard}>
+                <div style={styles.statValue}>{stats ? stats.especialidades : "…"}</div>
+                Especialidades
+              </div>
               <div style={styles.statCard}><div style={styles.statValue}>24/7</div>Asistente IA</div>
-              <div style={styles.statCard}><div style={styles.statValue}>5</div>Roles</div>
+              <div style={styles.statCard}>
+                <div style={styles.statValue}>{stats ? stats.equipo : "…"}</div>
+                Equipo médico
+              </div>
               <div style={styles.statCard}><div style={styles.statValue}>IoT</div>Signos vitales</div>
             </div>
           </div>
@@ -466,11 +584,30 @@ function Home() {
           <h2 style={styles.sectionTitle}>Nuestro equipo</h2>
 
           <div style={styles.teamGrid}>
-            <div style={styles.memberCard}>Dr. Ramírez<br />Jefe de área</div>
-            <div style={styles.memberCard}>Dra. García<br />Ginecología</div>
-            <div style={styles.memberCard}>Dr. López<br />Obstetricia</div>
-            <div style={styles.memberCard}>Enf. Martínez<br />Enfermera</div>
-            <div style={styles.memberCard}>Asist. Sánchez<br />Asistente</div>
+            {cargandoEquipo &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={userStyles.skeletonCard} />
+              ))}
+
+            {!cargandoEquipo && errorEquipo && (
+              <p style={userStyles.emptyText}>
+                No pudimos cargar el equipo médico en este momento.
+              </p>
+            )}
+
+            {!cargandoEquipo && !errorEquipo && equipo.length === 0 && (
+              <p style={userStyles.emptyText}>Aún no hay miembros de equipo registrados.</p>
+            )}
+
+            {!cargandoEquipo &&
+              !errorEquipo &&
+              equipo.map((miembro) => (
+                <div key={miembro.id} style={styles.memberCard}>
+                  {miembro.nombre}
+                  <br />
+                  {miembro.rol}
+                </div>
+              ))}
           </div>
         </div>
       </section>

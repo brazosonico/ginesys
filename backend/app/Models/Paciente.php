@@ -16,6 +16,13 @@ class Paciente extends Model
         'apellido_paterno',
         'apellido_materno',
         'fecha_nacimiento',
+        'curp',
+        'genero',
+        'telefono',
+        'correo_contacto',
+        'direccion',
+        'tipo_sangre',
+        'alergias',
         'activo',
     ];
 }

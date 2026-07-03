@@ -42,7 +42,7 @@ function ClinicalRecord() {
       } catch (error) {
         setRecord(initialRecord);
         setBackendMessage(
-          "AQUÍ CONECTA AL BACK BRAY: falta conectar el endpoint del expediente clínico."
+          "No se pudo cargar el expediente clínico. Intenta de nuevo en unos momentos."
         );
       } finally {
         setLoading(false);
@@ -66,7 +66,7 @@ function ClinicalRecord() {
         </header>
 
         <div className="doctor-empty">
-          AQUÍ CONECTA AL BACK BRAY: esta vista debe recibir el ID del paciente o permitir buscarlo desde backend.
+          Selecciona un paciente para ver su expediente clínico.
         </div>
       </section>
     );

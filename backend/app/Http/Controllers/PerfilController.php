@@ -65,6 +65,7 @@ class PerfilController extends Controller
             'username' => 'sometimes|string|max:255',
             'correo' => 'sometimes|email|max:255|unique:usuarios,correo,' . $usuario->id_usuario . ',id_usuario',
             'password' => 'sometimes|nullable|string|min:8',
+            'genero' => 'sometimes|nullable|in:masculino,femenino',
         ]);
 
         if ($validator->fails()) {
@@ -99,6 +100,7 @@ class PerfilController extends Controller
                     'telefono',
                     'fecha_nacimiento',
                     'curp',
+                    'genero',
                     'correo_contacto',
                     'direccion',
                     'tipo_sangre',

@@ -66,6 +66,7 @@ const FORM_INICIAL = {
   telefono: "",
   fecha_nacimiento: "",
   curp: "",
+  genero: "",
   correo_contacto: "",
   direccion: "",
   tipo_sangre: "",
@@ -121,6 +122,7 @@ function Perfil() {
             telefono: p.telefono || "",
             fecha_nacimiento: p.fecha_nacimiento || "",
             curp: p.curp || "",
+            genero: p.genero || "",
             correo_contacto: p.correo_contacto || "",
             direccion: p.direccion || "",
             tipo_sangre: p.tipo_sangre || "",
@@ -288,6 +290,13 @@ function Perfil() {
                     <input style={styles.input} type="text" name="curp" value={form.curp} onChange={handleChange} />
                   </div>
                 </div>
+
+                <label style={styles.label}>Género</label>
+                <select style={styles.select} name="genero" value={form.genero} onChange={handleChange}>
+                  <option value="">Selecciona una opción</option>
+                  <option value="femenino">Femenino</option>
+                  <option value="masculino">Masculino</option>
+                </select>
 
                 <label style={styles.label}>Correo de contacto</label>
                 <input style={styles.input} type="email" name="correo_contacto" value={form.correo_contacto} onChange={handleChange} />

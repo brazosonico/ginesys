@@ -372,9 +372,7 @@ class DoctorController extends Controller
         $patientData = [
             'fullName' => trim($paciente->nombres . ' ' . $paciente->apellido_paterno . ' ' . $paciente->apellido_materno),
             'age' => $edad,
-            // AQUÍ CONECTA AL BACK BRAY: la tabla "pacientes" no tiene columna de género/sexo,
-            // se deja null hasta que se agregue esa columna si se necesita.
-            'gender' => null,
+            'gender' => $paciente->genero,
             'phone' => $paciente->telefono,
         ];
 
