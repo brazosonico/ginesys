@@ -111,7 +111,7 @@ function ClinicalRecord() {
 
                 <div className="clinical-info-box">
                   <span>Sexo</span>
-                  <strong>{record.patient.gender}</strong>
+                  <strong>{record.patient.gender || "No especificado"}</strong>
                 </div>
 
                 <div className="clinical-info-box">

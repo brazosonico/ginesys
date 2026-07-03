@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 
+
 const DashboardLayout = ({ children }) => {
   // Estado para controlar si el menú móvil está abierto o cerrado
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
