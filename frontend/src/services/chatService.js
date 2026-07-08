@@ -1,9 +1,10 @@
 // Servicio del Asistente IA.
-// Mientras el endpoint de Laravel no exista, usa respuestas simuladas.
-// Cuando lo tengas listo en el backend (ej. routes/api.php -> POST /api/chat),
-// solo cambia USE_MOCK a false y ajusta la URL si es necesario.
+// Conectado al backend real: POST /api/chat -> ChatbotController@reply.
+// La ruta vive dentro del grupo auth:sanctum, asi que el usuario se
+// identifica con el token de sesion (Authorization: Bearer ...), nunca
+// con un id_usuario mandado por el cliente.
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 const API_URL = "/api/chat";
 
 function mockReply(message) {
@@ -30,16 +31,26 @@ export async function sendChatMessage(message, history = []) {
     return mockReply(message);
   }
 
-  const token = localStorage.getItem("token"); // ajusta según tu manejo de auth
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    // Sin token no tiene caso llamar al backend: siempre respondera
+    // "no pude identificar tu sesion". Lo resolvemos aqui mismo.
+    return "Parece que no tienes una sesión activa. Inicia sesión de nuevo para poder ayudarte.";
+  }
 
   const res = await fetch(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify({ message, history }),
   });
+
+  if (res.status === 401) {
+    return "Tu sesión expiró. Por favor vuelve a iniciar sesión.";
+  }
 
   if (!res.ok) {
     throw new Error("No se pudo obtener respuesta del asistente");

@@ -89,9 +89,15 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // Se elimina cualquier token viejo antes de emitir uno nuevo, para que
+        // no se acumulen tokens huerfanos cada vez que el usuario inicia sesion.
+        $usuario->tokens()->delete();
+        $token = $usuario->createToken('ginesys-app')->plainTextToken;
+
         return response()->json([
             'message'      => 'Login exitoso',
             'tipo_usuario' => $request->tipo_usuario,
+            'token'        => $token,
             'usuario'      => [
                 'id_usuario' => $usuario->id_usuario, // 👈 antes era 'id', no coincidía con el frontend
                 'username'   => $usuario->username,
@@ -99,5 +105,17 @@ class AuthController extends Controller
                 'id_rol'     => $usuario->id_rol,
             ],
         ], 200);
+    }
+
+    /**
+     * POST /api/logout
+     * Revoca el token con el que se hizo esta peticion. Requiere
+     * auth:sanctum, asi que $request->user() siempre existe aqui.
+     */
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Sesion cerrada correctamente']);
     }
 }

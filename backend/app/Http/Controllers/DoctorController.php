@@ -84,13 +84,13 @@ class DoctorController extends Controller
 
     private function doctorAutenticado(Request $request)
     {
-        $idUsuario = $request->header('X-Usuario-Id');
+        $usuario = $request->user();
 
-        if (!$idUsuario) {
+        if (!$usuario) {
             return null;
         }
 
-        return Doctor::where('id_usuario', $idUsuario)->first();
+        return Doctor::where('id_usuario', $usuario->id_usuario)->first();
     }
 
     public function dashboard(Request $request)

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Paciente;
+use App\Models\Usuario;
 use App\Models\ConsultaMedica;
 use App\Models\Diagnostico;
 use App\Models\Receta;
@@ -14,26 +15,42 @@ use Carbon\Carbon;
 
 class CitaController extends Controller
 {
-    // 🔹 LISTAR CITAS POR USUARIO
+    /**
+     * Determina si el usuario autenticado (paciente o doctor) es dueño
+     * de esta cita. Se usa para bloquear IDOR: sin esto, cualquiera con
+     * un folio podia ver/editar/cancelar la cita de otra persona.
+     */
+    private function usuarioEsDuenoDeCita(Cita $cita, Usuario $usuario): bool
+    {
+        $paciente = Paciente::where('id_usuario', $usuario->id_usuario)->first();
+        if ($paciente && $paciente->id_paciente === $cita->id_paciente) {
+            return true;
+        }
+
+        $doctor = Doctor::where('id_usuario', $usuario->id_usuario)->first();
+        if ($doctor && $doctor->id_doctor === $cita->id_doctor) {
+            return true;
+        }
+
+        return false;
+    }
+
+    // 🔹 LISTAR CITAS DEL USUARIO AUTENTICADO
     public function index(Request $request)
     {
-        $idUsuario = $request->query('id_usuario');
+        $usuario = $request->user();
         $tipoUsuario = $request->query('tipo_usuario', 'paciente');
-
-        if (!$idUsuario) {
-            return response()->json(['message' => 'Falta id_usuario'], 400);
-        }
 
         $query = Cita::with(['paciente', 'doctor.especialidad']);
 
         if ($tipoUsuario === 'doctor') {
-            $doctor = Doctor::where('id_usuario', $idUsuario)->first();
+            $doctor = Doctor::where('id_usuario', $usuario->id_usuario)->first();
             if (!$doctor) {
                 return response()->json(['citas' => []]);
             }
             $query->where('id_doctor', $doctor->id_doctor);
         } else {
-            $paciente = Paciente::where('id_usuario', $idUsuario)->first();
+            $paciente = Paciente::where('id_usuario', $usuario->id_usuario)->first();
             if (!$paciente) {
                 return response()->json(['citas' => []]);
             }
@@ -49,16 +66,17 @@ class CitaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'id_usuario' => 'required|exists:usuarios,id_usuario',
             'id_doctor' => 'required|exists:doctores,id_doctor',
             'fecha_hora' => 'required|date',
             'motivo_consulta' => 'nullable|string',
             'observaciones' => 'nullable|string',
         ]);
 
-        // Resolvemos el paciente a partir del usuario logueado,
-        // en vez de confiar en un id_paciente mandado desde el frontend.
-        $paciente = Paciente::where('id_usuario', $request->id_usuario)->first();
+        $usuario = $request->user();
+
+        // El paciente y el "creada_por" salen del usuario autenticado
+        // por el token, nunca de un campo que mande el cliente.
+        $paciente = Paciente::where('id_usuario', $usuario->id_usuario)->first();
 
         if (!$paciente) {
             return response()->json([
@@ -80,17 +98,16 @@ class CitaController extends Controller
             ], 409);
         }
 
-      // En store():
-$cita = Cita::create([
-    'id_paciente' => $paciente->id_paciente,
-    'id_doctor' => $request->id_doctor,
-    'fecha_hora' => $request->fecha_hora,
-    'motivo_consulta' => $request->motivo_consulta,
-    'estado' => 'programada',   // 👈 antes 'pendiente'
-    'observaciones' => $request->observaciones,
-    'creada_por' => $request->id_usuario,
-    'fecha_creacion' => Carbon::now(),
-]);
+        $cita = Cita::create([
+            'id_paciente' => $paciente->id_paciente,
+            'id_doctor' => $request->id_doctor,
+            'fecha_hora' => $request->fecha_hora,
+            'motivo_consulta' => $request->motivo_consulta,
+            'estado' => 'programada',
+            'observaciones' => $request->observaciones,
+            'creada_por' => $usuario->id_usuario,
+            'fecha_creacion' => Carbon::now(),
+        ]);
 
         return response()->json([
             'message' => 'Cita creada correctamente',
@@ -98,8 +115,8 @@ $cita = Cita::create([
         ], 201);
     }
 
-    // 🔹 VER UNA CITA
-    public function show($id)
+    // 🔹 VER UNA CITA (solo el paciente o doctor dueño de la cita)
+    public function show(Request $request, $id)
     {
         $cita = Cita::with(['paciente', 'doctor.especialidad'])
             ->where('id_cita', $id)
@@ -109,16 +126,24 @@ $cita = Cita::create([
             return response()->json(['message' => 'Cita no encontrada'], 404);
         }
 
+        if (!$this->usuarioEsDuenoDeCita($cita, $request->user())) {
+            return response()->json(['message' => 'No tienes acceso a esta cita'], 403);
+        }
+
         return response()->json($cita);
     }
 
-    // 🔹 ACTUALIZAR CITA
+    // 🔹 ACTUALIZAR CITA (solo el paciente o doctor dueño de la cita)
     public function update(Request $request, $id)
     {
         $cita = Cita::find($id);
 
         if (!$cita) {
             return response()->json(['message' => 'Cita no encontrada'], 404);
+        }
+
+        if (!$this->usuarioEsDuenoDeCita($cita, $request->user())) {
+            return response()->json(['message' => 'No tienes acceso a esta cita'], 403);
         }
 
         $cita->update([
@@ -134,13 +159,17 @@ $cita = Cita::create([
         ]);
     }
 
-    // 🔹 CANCELAR CITA
-    public function cancelar($id)
+    // 🔹 CANCELAR CITA (solo el paciente o doctor dueño de la cita)
+    public function cancelar(Request $request, $id)
     {
         $cita = Cita::find($id);
 
         if (!$cita) {
             return response()->json(['message' => 'Cita no encontrada'], 404);
+        }
+
+        if (!$this->usuarioEsDuenoDeCita($cita, $request->user())) {
+            return response()->json(['message' => 'No tienes acceso a esta cita'], 403);
         }
 
         $cita->update(['estado' => 'cancelada']);
@@ -153,11 +182,11 @@ $cita = Cita::create([
 
     /**
      * 🔹 VER RECETA DE UNA CITA
-     * GET /api/citas/{id}/receta?id_usuario=...
+     * GET /api/citas/{id}/receta
      *
      * Recorre cita -> consulta_medica -> diagnostico + receta -> medicamentos_receta.
-     * Si viene id_usuario, valida que la cita le pertenezca a ese paciente
-     * antes de mostrar la receta.
+     * Valida con el usuario autenticado que la cita le pertenezca antes de
+     * mostrar la receta.
      */
     public function receta(Request $request, $id)
     {
@@ -167,12 +196,8 @@ $cita = Cita::create([
             return response()->json(['message' => 'Cita no encontrada'], 404);
         }
 
-        $idUsuario = $request->query('id_usuario');
-        if ($idUsuario) {
-            $paciente = Paciente::where('id_usuario', $idUsuario)->first();
-            if (!$paciente || $paciente->id_paciente !== $cita->id_paciente) {
-                return response()->json(['message' => 'No tienes acceso a esta receta'], 403);
-            }
+        if (!$this->usuarioEsDuenoDeCita($cita, $request->user())) {
+            return response()->json(['message' => 'No tienes acceso a esta receta'], 403);
         }
 
         $consulta = ConsultaMedica::where('id_cita', $cita->id_cita)
@@ -217,13 +242,17 @@ $cita = Cita::create([
         ]);
     }
 
-    // 🔹 ELIMINAR (OPCIONAL)
-    public function destroy($id)
+    // 🔹 ELIMINAR (solo el paciente o doctor dueño de la cita)
+    public function destroy(Request $request, $id)
     {
         $cita = Cita::find($id);
 
         if (!$cita) {
             return response()->json(['message' => 'Cita no encontrada'], 404);
+        }
+
+        if (!$this->usuarioEsDuenoDeCita($cita, $request->user())) {
+            return response()->json(['message' => 'No tienes acceso a esta cita'], 403);
         }
 
         $cita->delete();

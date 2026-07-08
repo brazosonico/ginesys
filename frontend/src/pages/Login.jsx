@@ -40,23 +40,17 @@ function Login() {
                 return;
             }
 
-            // Guardar usuario en localStorage
-localStorage.setItem("usuario", JSON.stringify(data.usuario));
-localStorage.setItem("tipo_usuario", data.tipo_usuario);
+            // Guardar usuario, tipo y token en localStorage
+            localStorage.setItem("usuario", JSON.stringify(data.usuario));
+            localStorage.setItem("tipo_usuario", data.tipo_usuario);
+            localStorage.setItem("token", data.token);
 
-// Guardar usuario en localStorage
-localStorage.setItem("usuario", JSON.stringify(data.usuario));
-localStorage.setItem("tipo_usuario", data.tipo_usuario);
-
-// Guardar usuario
-localStorage.setItem("usuario", JSON.stringify(data.usuario));
-
-// Redirigir según el rol
-if (data.usuario.id_rol === 2) {
-    window.location.href = "/doctor";
-} else {
-    window.location.href = "/";
-}
+            // Redirigir según el rol
+            if (data.usuario.id_rol === 2) {
+                window.location.href = "/doctor";
+            } else {
+                window.location.href = "/";
+            }
 
         } catch (err) {
             setError("No se pudo conectar con el servidor");

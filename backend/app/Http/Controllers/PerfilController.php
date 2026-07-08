@@ -12,29 +12,19 @@ use Illuminate\Support\Facades\Validator;
 class PerfilController extends Controller
 {
     /**
-     * NOTA DE SEGURIDAD:
-     * El login actual no usa Sanctum ni sesión de Laravel, así que
-     * aquí se identifica al usuario con el "id_usuario" que manda
-     * el frontend (guardado en localStorage tras el login). Es
-     * temporal: lo ideal a futuro es migrar a Sanctum y usar
-     * $request->user() en vez de "id_usuario".
+     * Estas rutas viven dentro del grupo auth:sanctum (routes/api.php),
+     * asi que $request->user() siempre es el Usuario autenticado por el
+     * token. Ya no se confia en "id_usuario" mandado por el cliente:
+     * antes, cualquiera podia leer/editar/borrar la cuenta de otra
+     * persona con solo cambiar ese parametro.
      */
 
-    // GET /api/perfil?id_usuario=123&tipo_usuario=paciente
+    // GET /api/perfil?tipo_usuario=paciente
     public function show(Request $request)
     {
-        $idUsuario = $request->query('id_usuario');
+        $usuario = $request->user();
         $tipoUsuario = $request->query('tipo_usuario', 'paciente');
-
-        if (!$idUsuario) {
-            return response()->json(['message' => 'Falta id_usuario'], 400);
-        }
-
-        $usuario = Usuario::find($idUsuario);
-
-        if (!$usuario) {
-            return response()->json(['message' => 'Usuario no encontrado'], 404);
-        }
+        $idUsuario = $usuario->id_usuario;
 
         $perfil = $this->buscarPerfil($idUsuario, $tipoUsuario);
 
@@ -48,18 +38,9 @@ class PerfilController extends Controller
     // PUT /api/perfil
     public function update(Request $request)
     {
-        $idUsuario = $request->input('id_usuario');
+        $usuario = $request->user();
+        $idUsuario = $usuario->id_usuario;
         $tipoUsuario = $request->input('tipo_usuario', 'paciente');
-
-        if (!$idUsuario) {
-            return response()->json(['message' => 'Falta id_usuario'], 400);
-        }
-
-        $usuario = Usuario::find($idUsuario);
-
-        if (!$usuario) {
-            return response()->json(['message' => 'Usuario no encontrado'], 404);
-        }
 
         $validator = Validator::make($request->all(), [
             'username' => 'sometimes|string|max:255',
@@ -116,20 +97,15 @@ class PerfilController extends Controller
         ]);
     }
 
-    // DELETE /api/perfil?id_usuario=123
+    // DELETE /api/perfil
     public function destroy(Request $request)
     {
-        $idUsuario = $request->query('id_usuario');
+        $usuario = $request->user();
+        $idUsuario = $usuario->id_usuario;
 
-        if (!$idUsuario) {
-            return response()->json(['message' => 'Falta id_usuario'], 400);
-        }
-
-        $usuario = Usuario::find($idUsuario);
-
-        if (!$usuario) {
-            return response()->json(['message' => 'Usuario no encontrado'], 404);
-        }
+        // Revoca todos sus tokens: si borra su cuenta, no debe quedar
+        // ninguna sesion activa usable.
+        $usuario->tokens()->delete();
 
         // Si tus llaves foráneas (pacientes.id_usuario, doctores.id_usuario)
         // no tienen ON DELETE CASCADE, hay que borrar esas filas primero
